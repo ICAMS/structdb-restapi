@@ -28,5 +28,5 @@ setup(name='structdbrest',
       package_dir={'': 'src'},
 
       zip_safe=True,
-      install_requires=['ase>=3.18', 'pandas'],
+      install_requires=['ase>=3.18', 'pandas', 'requests'],
       )
