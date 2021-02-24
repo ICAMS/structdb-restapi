@@ -267,7 +267,7 @@ class StructDBLightRester:
         except KeyError:
             print("Empty or invalid response")
 
-    def query_comparator(self, property_type_name=None, comparator_name=None, verbose=True):
+    def query_comparators(self, property_type_name=None, comparator_name=None, verbose=True):
         query_data = dict(
             param_type=property_type_name if property_type_name else "",
             param_name=comparator_name if comparator_name else ""
@@ -276,7 +276,7 @@ class StructDBLightRester:
         result = self._query_db_entry_(query_data, self.COMPARATOR_URL, verbose)
         return result
 
-    def query_generic(self, prototype_strukturbericht=None, prototype_name=None, verbose=True):
+    def query_generics(self, prototype_strukturbericht=None, prototype_name=None, verbose=True):
         query_data = dict(
             param_prototype_strukturbericht=prototype_strukturbericht if prototype_strukturbericht else "",
             param_prototype_name=prototype_name if prototype_name else "",
@@ -285,7 +285,7 @@ class StructDBLightRester:
         result = self._query_db_entry_(query_data, self.GENERIC_URL, verbose)
         return result
 
-    def query_property(self, property_type_name=None, property_name=None, structure_composition=None,
+    def query_properties(self, property_type_name=None, property_name=None, structure_composition=None,
                        prototype_strukturbericht=None, prototype_name=None,
                        property_id=None,
                        calculator_name=None, visible_for_comparison_only=True,
@@ -306,7 +306,7 @@ class StructDBLightRester:
         result = self._query_db_entry_(query_data, self.PROPERTIES_URL, verbose)
         return result
 
-    def query_property_type(self, propertytype_name=None, verbose=True):
+    def query_property_types(self, propertytype_name=None, verbose=True):
         query_data = dict(
             param_propertytype_name=propertytype_name if propertytype_name else "",
         )
@@ -314,7 +314,7 @@ class StructDBLightRester:
         result = self._query_db_entry_(query_data, self.PROPERTYTYPE_URL, verbose)
         return result
 
-    def query_calculator_type(self, calculator_type_name=None, verbose=True):
+    def query_calculator_types(self, calculator_type_name=None, verbose=True):
         query_data = dict(
             param_calculator_type_name=calculator_type_name if calculator_type_name else "",
         )
