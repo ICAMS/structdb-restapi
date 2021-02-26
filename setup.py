@@ -1,14 +1,4 @@
-import os
-import platform
-import re
-import shutil
-import subprocess
-import sys
-from distutils.version import LooseVersion
-
-from setuptools import setup, find_packages, Extension
-from setuptools.command.build_ext import build_ext
-
+from setuptools import setup, find_packages
 
 packages = find_packages(where='src',
                          # exclude=['*.tests',

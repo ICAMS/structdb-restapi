@@ -61,7 +61,8 @@ class StructureEntry(Entry):
         if hasattr(self, "GENERICPARENT"):
             atoms.GENERICPARENT = self.GENERICPARENT
 
-        atoms.STRUKTURBERICHT = self.STRUKTURBERICHT
+        if hasattr(self, "STRUKTURBERICHT"):
+            atoms.STRUKTURBERICHT = self.STRUKTURBERICHT
 
         return atoms
 
