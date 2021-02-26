@@ -113,10 +113,26 @@ def process_composition_query(c):
 
 
 class PropertyTypes(object):
+    """
+    Class with CAPITALIZED property types
+    """
     pass
 
 
 class StructDBLightRester:
+    """
+    REST api client for atomistictools.org website to query and download the data
+
+     StructDBLightRester(token=None, url="atomistictools.org", verbose=True, populates_property_types=True,
+                 entries_cache=None)
+
+    token (str): access token to the RESTapi interface
+    host (str): hostname of the server
+    verbose (bool): verbosity level for queries (default: True)
+    populates_property_types (bool): option to automatically query available property types (default: True)
+    entries_cache: entries cache dictionary (optional)
+    """
+
     API_VERSION = "/api/v1.0/"
     _COMPARATOR_URL = API_VERSION + "comparisontypes"
     _PROPERTIES_URL = API_VERSION + "properties"
@@ -124,11 +140,14 @@ class StructDBLightRester:
     _PROPERTYTYPE_URL = API_VERSION + "propertytypes"
     _CALCULATORTYPE_URL = API_VERSION + "calculatortypes"
 
-    def __init__(self, token, url="http://atomistictools.org", verbose=True, entries_cache=None,
-                 populates_property_types=True):
-        self.url = url
+    def __init__(self, token=None, host="atomistictools.org", verbose=True, populates_property_types=True,
+                 entries_cache=None):
+        self.url = host
         if self.url.endswith("/"):
             self.url = self.url[:-1]
+
+        if not self.url.startswith("http://"):
+            self.url = "http://" + self.url
 
         if not entries_cache:
             self.entries_cache = defaultdict(dict)
@@ -138,12 +157,12 @@ class StructDBLightRester:
         self.verbose = verbose
         caching_decorator = partial(db_entry_cache_decorator, entries_cache=self.entries_cache)
 
-        self.make_prop = caching_decorator(self.make_prop)
-        self.make_structure = caching_decorator(self.make_structure)
-        self.make_generic = caching_decorator(self.make_generic)
-        self.make_property_type = caching_decorator(self.make_property_type)
-        self.make_calculator = caching_decorator(self.make_calculator)
-        self.make_comparison_type = caching_decorator(self.make_comparison_type)
+        self._make_prop = caching_decorator(self._make_prop)
+        self._make_structure = caching_decorator(self._make_structure)
+        self._make_generic = caching_decorator(self._make_generic)
+        self._make_property_type = caching_decorator(self._make_property_type)
+        self._make_calculator = caching_decorator(self._make_calculator)
+        self._make_comparison_type = caching_decorator(self._make_comparison_type)
 
         self.token = token
 
@@ -156,24 +175,24 @@ class StructDBLightRester:
             setattr(PropertyTypes, pt.NAME.upper(), pt.NAME)
         self.PropertyTypes = PropertyTypes
 
-    def make_entry(self, entry_json, encoder_cache):
+    def _make_entry(self, entry_json, encoder_cache):
         if isinstance(entry_json, dict) and ENTRY_TYPE_KEY in entry_json:
             entry_type = entry_json[ENTRY_TYPE_KEY]
             if entry_type == "Property":
-                return self.make_prop(entry_json, encoder_cache)
+                return self._make_prop(entry_json, encoder_cache)
             elif entry_type == "StructureEntry":
-                return self.make_structure(entry_json, encoder_cache)
+                return self._make_structure(entry_json, encoder_cache)
             elif entry_type == "GenericEntry":
-                return self.make_generic(entry_json, encoder_cache)
+                return self._make_generic(entry_json, encoder_cache)
             elif entry_type == "CalculatorType":
-                return self.make_calculator(entry_json, encoder_cache)
+                return self._make_calculator(entry_json, encoder_cache)
             elif entry_type == "PropertyType":
-                return self.make_property_type(entry_json, encoder_cache)
+                return self._make_property_type(entry_json, encoder_cache)
             elif entry_type == "ComparisonType":
-                return self.make_comparison_type(entry_json, encoder_cache)
+                return self._make_comparison_type(entry_json, encoder_cache)
         return entry_json
 
-    def make_prop(self, entry_json, encoder_cache):
+    def _make_prop(self, entry_json, encoder_cache):
         entry_id = str(entry_json["id"])
         entry_json = encoder_cache['Property'][entry_id]
 
@@ -185,62 +204,69 @@ class StructDBLightRester:
 
         for k, v in entry_json.items():
             if k not in ["CHILDREN", "STRUCTURES"]:
-                setattr(new_prop, k, self.make_entry(v, encoder_cache))
+                setattr(new_prop, k, self._make_entry(v, encoder_cache))
             else:
                 setattr(new_prop, k, {})
                 sub_dict = getattr(new_prop, k)
                 for ch_name, ch_prop in v.items():
-                    sub_dict[ch_name] = self.make_entry(ch_prop, encoder_cache)
+                    sub_dict[ch_name] = self._make_entry(ch_prop, encoder_cache)
 
         return new_prop
 
-    def make_structure(self, entry_json, encoder_cache):
+    def _make_structure(self, entry_json, encoder_cache):
         entry_id = str(entry_json["id"])
         entry_json = encoder_cache['StructureEntry'][entry_id]
 
         new_struct = data_classes.StructureEntry()
         for k, v in entry_json.items():
-            setattr(new_struct, k, self.make_entry(v, encoder_cache))
+            setattr(new_struct, k, self._make_entry(v, encoder_cache))
         return new_struct
 
-    def make_generic(self, entry_json, encoder_cache):
+    def _make_generic(self, entry_json, encoder_cache):
         entry_id = str(entry_json["id"])
         entry_json = encoder_cache['GenericEntry'][entry_id]
 
         new_gen = data_classes.GenericEntry()
         for k, v in entry_json.items():
-            setattr(new_gen, k, self.make_entry(v, encoder_cache))
+            setattr(new_gen, k, self._make_entry(v, encoder_cache))
         return new_gen
 
-    def make_property_type(self, entry_json, encoder_cache):
+    def _make_property_type(self, entry_json, encoder_cache):
         entry_id = str(entry_json["id"])
         entry_json = encoder_cache['PropertyType'][entry_id]
 
         new_gen = data_classes.PropertyType()
         for k, v in entry_json.items():
-            setattr(new_gen, k, self.make_entry(v, encoder_cache))
+            setattr(new_gen, k, self._make_entry(v, encoder_cache))
         return new_gen
 
-    def make_comparison_type(self, entry_json, encoder_cache):
+    def _make_comparison_type(self, entry_json, encoder_cache):
         entry_id = str(entry_json["id"])
         entry_json = encoder_cache['ComparisonType'][entry_id]
 
         new_gen = data_classes.ComparisonType()
         for k, v in entry_json.items():
-            setattr(new_gen, k, self.make_entry(v, encoder_cache))
+            setattr(new_gen, k, self._make_entry(v, encoder_cache))
         return new_gen
 
-    def make_calculator(self, entry_json, encoder_cache):
+    def _make_calculator(self, entry_json, encoder_cache):
         entry_id = str(entry_json["id"])
 
         entry_json = encoder_cache['CalculatorType'][entry_id]
 
         new_gen = data_classes.CalculatorType()  # (entry_json["NAME"])
         for k, v in entry_json.items():
-            setattr(new_gen, k, self.make_entry(v, encoder_cache))
+            setattr(new_gen, k, self._make_entry(v, encoder_cache))
         return new_gen
 
-    def _query_db_entry_(self, query_data, url_endpoint, verbose):
+    def _query_db_entry_(self, query_data, url_endpoint, verbose=True):
+        """
+        General method for querying via REST api interface
+
+        query_data (dict): query dictionary
+        url_endpoint (str): REST api URL endpoint
+        verbose (bool): verbosity level
+        """
         cache_state = {}
         for entry_type_name, entries_cache in self.entries_cache.items():
             cache_state[entry_type_name] = list(entries_cache.keys())
@@ -264,12 +290,11 @@ class StructDBLightRester:
                                                                                       elapsed_time))
         try:
             response_dict = json.loads(response.content.decode('utf-8'))
-            # print("response_dict=", response_dict)
             data_dump = response_dict["data_dump"]
             encoder_cache = response_dict["cache_dump"]
             result = []
             for entry_json in data_dump:
-                res_prop = self.make_entry(entry_json, encoder_cache=encoder_cache)
+                res_prop = self._make_entry(entry_json, encoder_cache=encoder_cache)
                 result.append(res_prop)
             if verbose:
                 print(len(result), " entries received")
@@ -277,23 +302,19 @@ class StructDBLightRester:
         except KeyError:
             print("Empty or invalid response")
 
-    def query_comparators(self, property_type_name=None, comparator_name=None, limit=100, offset=0, verbose=None):
+    def query_generics(self, strukturbericht=None, prototype_name=None, limit=100, offset=0, verbose=None):
+        """
+        Query crystallographic prototypes (generic entries)
+        strukturbericht (str): prototype Strukturbericht notation
+        prototype_name (str): prototype name
+        limit (int): maximum number of entries to query (default: 100)
+        offset (int): offset of the query (default: 0)
+
+        Return: list of GenericEntry
+        """
         verbose = verbose if verbose is not None else self.verbose
         query_data = dict(
-            param_type=property_type_name if property_type_name else "",
-            param_name=comparator_name if comparator_name else "",
-            param_limit=limit,
-            param_offset=offset
-        )
-
-        result = self._query_db_entry_(query_data, self._COMPARATOR_URL, verbose)
-        return result
-
-    def query_generics(self, prototype_strukturbericht=None, prototype_name=None, limit=100, offset=0, verbose=None,
-                       ):
-        verbose = verbose if verbose is not None else self.verbose
-        query_data = dict(
-            param_prototype_strukturbericht=prototype_strukturbericht if prototype_strukturbericht else "",
+            param_prototype_strukturbericht=strukturbericht if strukturbericht else "",
             param_prototype_name=prototype_name if prototype_name else "",
             param_limit=limit,
             param_offset=offset
@@ -311,6 +332,22 @@ class StructDBLightRester:
                          property_id=None,
                          limit=100, offset=0,
                          verbose=None):
+        """
+        Query properties:
+        property_type_name (str): property type name
+                                  or StructDBLightRester.PropertyType... constants if populates_property_types=True
+        composition (str): pattern for property composition (`%` wildcard is possible,
+                           i.e. 'Al-2 Cu-1' or 'Si-%' or '%Mo-%' )
+        strukturbericht (str): pattern for prototype Strukturbericht notation (`%` wildcard is possible)
+        prototype_name (str): pattern for prototype name (`%` wildcard is possible)
+        calculator_name (str): pattern for calculator name (`%` wildcard is possible)
+        visible_for_comparison_only (bool): limit the query only to properties which has "visible_for_comparison" flag (default: True)
+        limit (int): maximum number of entries to query (default: 100)
+        offset (int): offset of the query (default: 0)
+        verbose (bool): verbosity level, if None default setting will be used
+
+        Return: list of Property
+        """
         verbose = verbose if verbose is not None else self.verbose
         query_data = dict(
             param_type=property_type_name if property_type_name else "",
@@ -328,6 +365,16 @@ class StructDBLightRester:
         return result
 
     def query_property_types(self, propertytype_name=None, limit=100, offset=0, verbose=None):
+        """
+        Query properties types:
+
+        property_type_name (str): property type name
+        limit (int): maximum number of entries to query (default: 100)
+        offset (int): offset of the query (default: 0)
+        verbose (bool): verbosity level, if None default setting will be used
+
+        Return: list of PropertyType
+        """
         verbose = verbose if verbose is not None else self.verbose
         query_data = dict(
             param_propertytype_name=propertytype_name if propertytype_name else "",
@@ -338,10 +385,20 @@ class StructDBLightRester:
         result = self._query_db_entry_(query_data, self._PROPERTYTYPE_URL, verbose)
         return result
 
-    def query_calculator_types(self, calculator_type_name=None, limit=100, offset=0, verbose=None):
+    def query_calculator_types(self, calculator_name=None, limit=100, offset=0, verbose=None):
+        """
+        Query calculator types:
+
+        calculator_name (str): pattern for calculator name (`%` wildcard is possible)
+        limit (int): maximum number of entries to query (default: 100)
+        offset (int): offset of the query (default: 0)
+        verbose (bool): verbosity level, if None default setting will be used
+
+        Return: list of CalculatorType
+        """
         verbose = verbose if verbose is not None else self.verbose
         query_data = dict(
-            param_calculator_type_name=calculator_type_name if calculator_type_name else "",
+            param_calculator_type_name=calculator_name if calculator_name else "",
             param_limit=limit,
             param_offset=offset
         )

@@ -1,12 +1,13 @@
 import numpy as np
 from ase.atoms import Atoms
 
+
 class DataClass:
     def __repr__(self):
         return type(self).__name__
 
 class Entry(DataClass):
-   pass
+    pass
 
 
 class Property(DataClass):
@@ -28,15 +29,15 @@ class Property(DataClass):
         except AttributeError:
             return super().__repr__()
 
+
 class StructureEntry(Entry):
-    def get_atoms(self, elems=None, linear_param_type=None, new_linear_param=None):
+
+    def get_atoms(self):
         """
-        :return: ASE-like Atoms from given StructureEntry
-         !NB!. Magnetic moments and charges are ignored, periodic boundary conditions are forced to True
+        Return: ASE-like Atoms from given StructureEntry
         """
-        if elems is None:
-            elems = self.OCCUPATION
-        # TODO Magnetic Moments and PBC correctly!
+        elems = self.OCCUPATION
+
         if self.COORDINATES_TYPE == 'relative':
             atoms = Atoms(symbols=elems, cell=self.LATTICE_VECTORS, scaled_positions=np.array(self.COORDINATES))
             atoms.set_pbc(True)
@@ -69,17 +70,21 @@ class StructureEntry(Entry):
     def __repr__(self):
         return "<StructureEntry #{}:{}>".format(self.id if self.id is not None else -1, self.COMPOSITION)
 
+
 class GenericEntry(Entry):
     def __repr__(self):
         return "<GenericEntry #{}:{}>".format(self.id if self.id is not None else -1, self.COMPOSITION)
+
 
 class PropertyType(DataClass):
     def __repr__(self):
         return "<PropertyType #{id}:{name}>".format(id=self.id, name=self.NAME)
 
+
 class ComparisonType(DataClass):
     def __repr__(self):
         return "<ComparisonType #{id}:{name}>".format(id=self.id, name=self.NAME)
+
 
 class CalculatorType(DataClass):
     def __repr__(self):
