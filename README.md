@@ -15,3 +15,5 @@ rest = StructDBLightRester(token = "YOUR_ACCESS_TOKEN")
 ```
 
 Please contact Yury Lysogorskiy (yury.lysogorskiy(at)rub.de), ICAMS, Ruhr University Bochum, Germany to get the token.
+
+See `notebooks/query-example.ipynb` for usage examples
