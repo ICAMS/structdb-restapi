@@ -1,6 +1,6 @@
 # About
 
-This is a simple REST API interface to [atomistictools.org](atomistictools.org) website that allow to query the **structdb** database for 
+This is a simple REST API interface to [atomistictools.org](http://atomistictools.org) website that allow to query the **structdb** database for 
 crystallographic prototypes, structures, properties and calculators.
 
 # Installation or update
